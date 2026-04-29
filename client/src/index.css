@@ -1,0 +1,205 @@
+/*
+ * Design System: 「纸质档案馆」Paper Archive
+ * ─────────────────────────────────────────
+ * Movement  : 新极简主义 × 日本文具美学（Muji-core）
+ * Background: #EEEBE5 亚麻白
+ * Primary   : #1C1C1C 近黑
+ * Muted     : #6B6966 暖灰
+ * Accent    : #2A1810 深棕（仅链接 hover）
+ * Border    : #D4C9B8 浅棕
+ * Font-mono : Geist Mono（标题/编号/代码）
+ * Font-sans : Noto Sans SC（正文/中文）
+ */
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 0.25rem;
+  --background: oklch(0.942 0.006 80);       /* #EEEBE5 亚麻白 */
+  --foreground: oklch(0.18 0.005 60);         /* #1C1C1C 近黑 */
+  --card: oklch(0.955 0.005 80);
+  --card-foreground: oklch(0.18 0.005 60);
+  --popover: oklch(0.955 0.005 80);
+  --popover-foreground: oklch(0.18 0.005 60);
+  --primary: oklch(0.18 0.005 60);
+  --primary-foreground: oklch(0.942 0.006 80);
+  --secondary: oklch(0.92 0.006 80);
+  --secondary-foreground: oklch(0.18 0.005 60);
+  --muted: oklch(0.88 0.007 80);
+  --muted-foreground: oklch(0.48 0.01 50);    /* #6B6966 暖灰 */
+  --accent: oklch(0.88 0.007 80);
+  --accent-foreground: oklch(0.18 0.005 60);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.84 0.012 70);             /* #D4C9B8 浅棕 */
+  --input: oklch(0.84 0.012 70);
+  --ring: oklch(0.48 0.01 50);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans SC', 'Inter', sans-serif;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+  }
+
+  /* 等宽字体类 */
+  .font-mono {
+    font-family: 'Geist Mono', 'IBM Plex Mono', monospace;
+  }
+}
+
+@layer components {
+  .container {
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    max-width: 680px;
+  }
+
+  .flex {
+    min-height: 0;
+    min-width: 0;
+  }
+
+  /* ── 版块标题行 ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  .section-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── 链接样式 ── */
+  .content-link {
+    font-family: 'Geist Mono', monospace;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--border);
+    transition: color 150ms ease, text-decoration-color 150ms ease;
+  }
+
+  .content-link:hover {
+    color: oklch(0.22 0.04 40);  /* #2A1810 深棕 */
+    text-decoration-style: solid;
+    text-decoration-color: oklch(0.22 0.04 40);
+  }
+
+  /* ── 条目描述 ── */
+  .item-desc {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+    margin-top: 0.2rem;
+    line-height: 1.6;
+  }
+
+  /* ── 淡入动画 ── */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .fade-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
+  .fade-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
+  .fade-in-delay-3 { animation-delay: 0.35s; opacity: 0; }
+  .fade-in-delay-4 { animation-delay: 0.5s; opacity: 0; }
+  .fade-in-delay-5 { animation-delay: 0.65s; opacity: 0; }
+
+  /* ── 粒子 Canvas 容器 ── */
+  .particles-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 2rem auto;
+  }
+
+  .particles-container canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  .particles-bg-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.6;
+    border-radius: 50%;
+    mask-image: radial-gradient(circle, black 40%, transparent 75%);
+    -webkit-mask-image: radial-gradient(circle, black 40%, transparent 75%);
+  }
+}
