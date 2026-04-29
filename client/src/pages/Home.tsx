@@ -387,7 +387,7 @@ export default function Home() {
               fontStyle: "italic",
             }}
           >
-            — 正在写，快了。
+            — 空空如也。
           </p>
         </section>
 
@@ -405,7 +405,7 @@ export default function Home() {
               fontStyle: "italic",
             }}
           >
-            — 整理中，稍后更新。
+            — 空空如也。
           </p>
         </section>
 
