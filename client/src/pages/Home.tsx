@@ -7,7 +7,7 @@
  */
 
 import { useRef } from "react";
-import { usePixelArt } from "@/hooks/usePixelArt";
+import { usePixelLab } from "@/hooks/usePixelLab";
 
 // ── Skills 数据（来自 WilsonWukz/MySkills）──
 const skills = [
@@ -47,7 +47,7 @@ function SectionHeader({ label }: { label: string }) {
 // ── 像素画 Canvas 组件（全宽，无遮罩）──
 function PixelArtCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  usePixelArt(canvasRef);
+  usePixelLab(canvasRef);
 
   return (
     <div
@@ -55,7 +55,6 @@ function PixelArtCanvas() {
         width: "100%",
         maxWidth: "560px",
         margin: "2.5rem 0 0.5rem 0",
-        // 参考 mmguo.dev/clawd：动画区域无边框、无遮罩，直接展示
         lineHeight: 0,
       }}
     >
@@ -67,9 +66,9 @@ function PixelArtCanvas() {
           width: "100%",
           height: "auto",
           display: "block",
-          imageRendering: "pixelated",  // 保持像素清晰度
+          imageRendering: "pixelated",
         }}
-        aria-label="Iron Man pixel art animation"
+        aria-label="Pixel-art AI inventor in a warm futuristic lab with a holographic brain"
       />
     </div>
   );
@@ -251,12 +250,10 @@ export default function Home() {
           </div>
         </header>
 
-        {/* ── 像素动画（全宽展示，参考 mmguo.dev/clawd）── */}
         <div className="fade-in fade-in-delay-2">
           <PixelArtCanvas />
         </div>
 
-        {/* ── 引言 ── */}
         <figure
           className="fade-in fade-in-delay-3"
           style={{ margin: "1.5rem 0 3.5rem 0" }}
@@ -278,7 +275,6 @@ export default function Home() {
           </blockquote>
         </figure>
 
-        {/* ── 01 Skills ── */}
         <section className="fade-in fade-in-delay-3" style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="01  Skills" />
           <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
@@ -322,7 +318,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── 02 Writings ── */}
         <section className="fade-in fade-in-delay-4" style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="02  Writings" />
           <p
@@ -337,7 +332,6 @@ export default function Home() {
           </p>
         </section>
 
-        {/* ── 03 What Shapes Me ── */}
         <section className="fade-in fade-in-delay-4" style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="03  What Shapes Me" />
           <p
@@ -352,7 +346,6 @@ export default function Home() {
           </p>
         </section>
 
-        {/* ── Contact ── */}
         <section className="fade-in fade-in-delay-5">
           <SectionHeader label="Contact" />
           <p
@@ -374,7 +367,6 @@ export default function Home() {
 
       </main>
 
-      {/* ── 页脚 ── */}
       <footer
         style={{
           borderTop: "1px solid #D4C9B8",
@@ -398,7 +390,6 @@ export default function Home() {
   );
 }
 
-// ── GitHub 图标 ──
 function GithubIcon({ size = 14 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
