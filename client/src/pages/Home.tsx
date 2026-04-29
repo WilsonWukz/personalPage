@@ -3,11 +3,11 @@
  * Background: #EEEBE5 亚麻白 | Font: Geist Mono (标题/编号) + Noto Sans SC (正文)
  * Color: #1C1C1C 近黑 | #6B6966 暖灰 | #2A1810 深棕(hover) | #D4C9B8 边框
  * Layout: 单列窄宽 680px，左对齐，大量留白
- * Animation: 全宽 Canvas（560×380），无遮罩，参考 mmguo.dev/clawd 展示方式
+ * Animation: 圆形 Canvas（560×400），羽化边缘，明亮纸质背景，鼠标互动粒子
+ * Ref: mmguo.dev — minimal, airy, illustration-like
  */
-
 import { useRef } from "react";
-import { usePixelLab } from "@/hooks/usePixelLab";
+import { useLabScene } from "@/hooks/useLabScene";
 
 // ── Skills 数据（来自 WilsonWukz/MySkills）──
 const skills = [
@@ -37,39 +37,79 @@ const skills = [
 // ── 版块标题组件 ──
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="section-header">
-      <span className="section-label">{label}</span>
-      <div className="section-rule" />
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "1rem",
+        marginBottom: "1.25rem",
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "'Geist Mono', monospace",
+          fontSize: "0.72rem",
+          fontWeight: 500,
+          color: "#9A9590",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+      </span>
+      <div
+        style={{
+          flex: 1,
+          height: "1px",
+          background: "#D4C9B8",
+        }}
+      />
     </div>
   );
 }
 
-// ── 像素画 Canvas 组件（全宽，无遮罩）──
-function PixelArtCanvas() {
+// ── 圆形动画 Canvas 组件 ──
+function LabCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  usePixelLab(canvasRef);
-
+  useLabScene(canvasRef);
   return (
     <div
       style={{
         width: "100%",
-        maxWidth: "560px",
-        margin: "2.5rem 0 0.5rem 0",
+        maxWidth: "520px",
+        margin: "2.5rem 0 1rem 0",
+        position: "relative",
         lineHeight: 0,
       }}
     >
-      <canvas
-        ref={canvasRef}
-        width={560}
-        height={380}
+      {/* Circular clip container */}
+      <div
         style={{
           width: "100%",
-          height: "auto",
-          display: "block",
-          imageRendering: "pixelated",
+          aspectRatio: "1 / 1",
+          borderRadius: "50%",
+          overflow: "hidden",
+          position: "relative",
+          cursor: "crosshair",
         }}
-        aria-label="Pixel-art AI inventor in a warm futuristic lab with a holographic brain"
-      />
+      >
+        <canvas
+          ref={canvasRef}
+          width={560}
+          height={400}
+          style={{
+            width: "140%",
+            height: "140%",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            imageRendering: "pixelated",
+          }}
+          aria-label="Pixel-art AI engineer at a bright desk with holographic brain and interactive particles"
+        />
+      </div>
     </div>
   );
 }
@@ -93,13 +133,13 @@ function ContentLink({ href, children }: { href: string; children: React.ReactNo
         transition: "color 150ms ease, text-decoration-color 150ms ease",
         cursor: "pointer",
       }}
-      onMouseEnter={e => {
+      onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLAnchorElement;
         el.style.color = "#2A1810";
         el.style.textDecorationStyle = "solid";
         el.style.textDecorationColor = "#2A1810";
       }}
-      onMouseLeave={e => {
+      onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLAnchorElement;
         el.style.color = "#1C1C1C";
         el.style.textDecorationStyle = "dashed";
@@ -111,10 +151,23 @@ function ContentLink({ href, children }: { href: string; children: React.ReactNo
   );
 }
 
+function GithubIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+    </svg>
+  );
+}
+
 export default function Home() {
   return (
-    <div style={{ minHeight: "100vh", background: "#EEEBE5" }}>
-
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#EEEBE5",
+        fontFamily: "'Noto Sans SC', 'Inter', sans-serif",
+      }}
+    >
       {/* ── 顶部通知栏 ── */}
       <div style={{ borderBottom: "1px solid #D4C9B8", padding: "0.55rem 0" }}>
         <div
@@ -127,59 +180,50 @@ export default function Home() {
             alignItems: "center",
           }}
         >
-          <span
-            style={{
-              fontFamily: "'Geist Mono', monospace",
-              fontSize: "0.68rem",
-              color: "#6B6966",
-              display: "flex",
-              gap: "0.75rem",
-              alignItems: "center",
-            }}
-          >
-            <span>2025.04</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <span
+              style={{
+                fontFamily: "'Geist Mono', monospace",
+                fontSize: "0.65rem",
+                color: "#9A9590",
+                letterSpacing: "0.06em",
+              }}
+            >
+              2025.04
+            </span>
             <a
               href="https://github.com/WilsonWukz/MySkills"
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                color: "#1C1C1C",
-                textDecoration: "underline",
-                textDecorationStyle: "dashed",
-                textUnderlineOffset: "2px",
-                textDecorationColor: "#D4C9B8",
+                fontFamily: "'Geist Mono', monospace",
+                fontSize: "0.65rem",
+                color: "#6B6966",
+                textDecoration: "none",
+                letterSpacing: "0.04em",
               }}
-              onMouseEnter={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.color = "#2A1810";
-                el.style.textDecorationStyle = "solid";
-              }}
-              onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.color = "#1C1C1C";
-                el.style.textDecorationStyle = "dashed";
-              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#1C1C1C")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#6B6966")}
             >
               MySkills 仓库已更新 →
             </a>
-          </span>
-
+          </div>
           <a
             href="https://github.com/WilsonWukz"
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              fontFamily: "'Geist Mono', monospace",
-              fontSize: "0.68rem",
-              color: "#6B6966",
-              textDecoration: "none",
               display: "flex",
               alignItems: "center",
-              gap: "0.35rem",
-              transition: "color 150ms",
+              gap: "0.4rem",
+              fontFamily: "'Geist Mono', monospace",
+              fontSize: "0.65rem",
+              color: "#6B6966",
+              textDecoration: "none",
+              letterSpacing: "0.04em",
             }}
-            onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "#1C1C1C")}
-            onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "#6B6966")}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#1C1C1C")}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#6B6966")}
           >
             <GithubIcon size={12} />
             WilsonWukz
@@ -187,85 +231,63 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── 主内容 ── */}
+      {/* ── 主内容区 ── */}
       <main
         style={{
           maxWidth: "680px",
           margin: "0 auto",
-          padding: "3.5rem 1.5rem 5rem",
+          padding: "3.5rem 1.5rem 4rem",
         }}
       >
-
-        {/* ── Hero ── */}
-        <header className="fade-in fade-in-delay-1" style={{ marginBottom: "0" }}>
+        {/* ── Hero 区域 ── */}
+        <section style={{ marginBottom: "0.5rem" }}>
           <h1
             style={{
               fontFamily: "'Geist Mono', monospace",
-              fontSize: "clamp(1.5rem, 4vw, 1.85rem)",
+              fontSize: "clamp(1.6rem, 4vw, 2.2rem)",
               fontWeight: 400,
-              letterSpacing: "0.02em",
               color: "#1C1C1C",
-              marginBottom: "1.25rem",
-              lineHeight: 1.25,
+              letterSpacing: "0.02em",
+              margin: "0 0 1.2rem 0",
+              lineHeight: 1.2,
             }}
           >
             wilson wu
           </h1>
-
           <p
             style={{
               fontFamily: "'Noto Sans SC', sans-serif",
-              fontSize: "0.9rem",
+              fontSize: "clamp(0.9rem, 2vw, 1rem)",
               color: "#3A3A39",
-              lineHeight: 1.85,
+              lineHeight: 1.9,
               maxWidth: "520px",
-              marginBottom: "1.4rem",
+              margin: "0 0 1.4rem 0",
             }}
           >
-            我在不停地探索，多智能体架构如何带来不同的，奇妙的 AI 产品体验。这里会更新我的提示词实验、Agent 工作流以及正在孵化的 AI 项目。坐标悉尼，茫茫人海，感谢遇见。
+            我在不停地探索，多智能体架构如何带来不同的，奇妙的 AI 产品体验。这里会更新我的提示词实验、Agent
+            工作流以及正在孵化的 AI 项目。坐标悉尼，茫茫人海，感谢遇见。
           </p>
-
-          {/* 社交链接 */}
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <a
-              href="https://github.com/WilsonWukz"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: "'Geist Mono', monospace",
-                fontSize: "0.78rem",
-                color: "#3A3A39",
-                textDecoration: "none",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                transition: "color 150ms",
-              }}
-              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "#2A1810")}
-              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "#3A3A39")}
-            >
-              <GithubIcon size={14} />
+          <ContentLink href="https://github.com/WilsonWukz">
+            <span style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <GithubIcon size={13} />
               github.com/WilsonWukz
-            </a>
-          </div>
-        </header>
+            </span>
+          </ContentLink>
+        </section>
 
-        <div className="fade-in fade-in-delay-2">
-          <PixelArtCanvas />
-        </div>
+        {/* ── 动画区域（圆形，羽化） ── */}
+        <LabCanvas />
 
-        <figure
-          className="fade-in fade-in-delay-3"
-          style={{ margin: "1.5rem 0 3.5rem 0" }}
-        >
+        {/* ── 座右铭 ── */}
+        <figure style={{ margin: "0 0 3.5rem 0" }}>
           <blockquote
             style={{
               fontFamily: "'Geist Mono', monospace",
-              fontSize: "0.72rem",
+              fontSize: "0.78rem",
               fontStyle: "italic",
               color: "#6B6966",
               textAlign: "center",
-              lineHeight: 1.75,
+              lineHeight: 1.8,
               margin: 0,
               padding: 0,
               border: "none",
@@ -275,12 +297,20 @@ export default function Home() {
           </blockquote>
         </figure>
 
-        <section className="fade-in fade-in-delay-3" style={{ marginBottom: "3.5rem" }}>
+        {/* ── 01 Skills ── */}
+        <section style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="01  Skills" />
           <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
             {skills.map((skill) => (
               <div key={skill.slug}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem", marginBottom: "0.3rem" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: "0.75rem",
+                    marginBottom: "0.35rem",
+                  }}
+                >
                   <ContentLink href={skill.github}>{skill.name}</ContentLink>
                   <span
                     style={{
@@ -300,10 +330,10 @@ export default function Home() {
                 <p
                   style={{
                     fontFamily: "'Noto Sans SC', sans-serif",
-                    fontSize: "0.82rem",
+                    fontSize: "0.88rem",
                     color: "#6B6966",
-                    lineHeight: 1.75,
-                    marginTop: "0.25rem",
+                    lineHeight: 1.8,
+                    marginTop: "0.2rem",
                   }}
                 >
                   {skill.desc}
@@ -312,18 +342,17 @@ export default function Home() {
             ))}
           </div>
           <div style={{ marginTop: "1.5rem" }}>
-            <ContentLink href="https://github.com/WilsonWukz/MySkills">
-              查看所有 Skills →
-            </ContentLink>
+            <ContentLink href="https://github.com/WilsonWukz/MySkills">查看所有 Skills →</ContentLink>
           </div>
         </section>
 
-        <section className="fade-in fade-in-delay-4" style={{ marginBottom: "3.5rem" }}>
+        {/* ── 02 Writings ── */}
+        <section style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="02  Writings" />
           <p
             style={{
               fontFamily: "'Geist Mono', monospace",
-              fontSize: "0.75rem",
+              fontSize: "0.8rem",
               color: "#B6B2AC",
               fontStyle: "italic",
             }}
@@ -332,12 +361,13 @@ export default function Home() {
           </p>
         </section>
 
-        <section className="fade-in fade-in-delay-4" style={{ marginBottom: "3.5rem" }}>
+        {/* ── 03 What Shapes Me ── */}
+        <section style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="03  What Shapes Me" />
           <p
             style={{
               fontFamily: "'Geist Mono', monospace",
-              fontSize: "0.75rem",
+              fontSize: "0.8rem",
               color: "#B6B2AC",
               fontStyle: "italic",
             }}
@@ -346,27 +376,26 @@ export default function Home() {
           </p>
         </section>
 
-        <section className="fade-in fade-in-delay-5">
+        {/* ── Contact ── */}
+        <section>
           <SectionHeader label="Contact" />
           <p
             style={{
               fontFamily: "'Noto Sans SC', sans-serif",
-              fontSize: "0.9rem",
+              fontSize: "0.95rem",
               color: "#3A3A39",
-              lineHeight: 1.85,
-              marginBottom: "1rem",
+              lineHeight: 1.9,
+              marginBottom: "1.1rem",
               maxWidth: "480px",
             }}
           >
             如果你想聊聊 AI、多智能体、或者任何有趣的想法，欢迎写信给我。我会认真读，通常也会回复 :)
           </p>
-          <ContentLink href="https://github.com/WilsonWukz">
-            github.com/WilsonWukz
-          </ContentLink>
+          <ContentLink href="https://github.com/WilsonWukz">github.com/WilsonWukz</ContentLink>
         </section>
-
       </main>
 
+      {/* ── 页脚 ── */}
       <footer
         style={{
           borderTop: "1px solid #D4C9B8",
@@ -377,7 +406,7 @@ export default function Home() {
         <p
           style={{
             fontFamily: "'Geist Mono', monospace",
-            fontSize: "0.62rem",
+            fontSize: "0.65rem",
             color: "#B6B2AC",
             letterSpacing: "0.1em",
           }}
@@ -385,15 +414,6 @@ export default function Home() {
           wilson wu · sydney · {new Date().getFullYear()}
         </p>
       </footer>
-
     </div>
-  );
-}
-
-function GithubIcon({ size = 14 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
-    </svg>
   );
 }
