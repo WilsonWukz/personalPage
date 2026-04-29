@@ -472,63 +472,147 @@ function drawHoloBrain(ctx: CanvasRenderingContext2D, t: number) {
   }
 }
 
-// ─── Draw engineer character ──────────────────────────────────────────────────
+// ─── Draw engineer character (seated, upper body only, behind desk) ────────────
 function drawEngineer(ctx: CanvasRenderingContext2D, t: number) {
-  const CX = 200; // center x
-  const CY = 255; // feet y
+  // Layout:
+  //   Desk top: y=260px  → in grid units: row 65
+  //   Monitor top: y=180px → row 45
+  //   Lamp head: y≈130px → row 32
+  //   Head top target: y≈148px (row 37) — between lamp and monitor
+  //
+  // Character sits BEHIND the desk — only torso + head visible above desk line.
+  // P=4, so 1 grid unit = 4px.
+  // We work in pixel coords (not grid) for precise placement.
 
-  // Subtle breathing: torso shifts 1px up/down
+  const DESK_TOP = 260;   // y where desk surface starts
+  const CX = 200;         // horizontal center of character
+
+  // Breathing animation
   const breathY = Math.sin(t * 1.2) * 1.5;
 
-  // Legs
-  px(ctx, CX / P - 2, CY / P - 4, 2, 4, C.pants);
-  px(ctx, CX / P + 0, CY / P - 4, 2, 4, C.pants);
-  // Feet
-  px(ctx, CX / P - 3, CY / P, 3, 1, "#2A2A3A");
-  px(ctx, CX / P + 0, CY / P, 3, 1, "#2A2A3A");
+  // ── Torso: fills from desk top upward, clipped by desk ──
+  // Torso top: DESK_TOP - 80 + breathY ≈ y=180
+  // Torso bottom: DESK_TOP (hidden behind desk)
+  const TORSO_TOP = DESK_TOP - 82 + breathY;
+  const TORSO_W = 52;  // pixels wide
+  const TORSO_H = 82;  // pixels tall (most hidden behind desk)
 
-  // Torso (jacket)
-  const ty = CY / P - 12 + breathY / P;
-  px(ctx, CX / P - 3, ty, 6, 8, C.jacket);
-  px(ctx, CX / P - 2, ty + 1, 4, 6, C.jacketDark);
-  // Shirt visible
-  px(ctx, CX / P - 1, ty + 1, 2, 5, C.shirt);
+  // Red jacket — outer
+  ctx.fillStyle = "#8B1A1A";  // deep crimson red
+  ctx.fillRect(CX - TORSO_W / 2, TORSO_TOP, TORSO_W, TORSO_H);
 
-  // Chest arc reactor glow
-  const chestGlow = 0.7 + Math.sin(t * 3.0) * 0.25;
+  // Jacket lapels / darker center
+  ctx.fillStyle = "#6A1010";
+  ctx.fillRect(CX - 8, TORSO_TOP + 4, 16, TORSO_H - 4);
+
+  // Shirt collar (light)
+  ctx.fillStyle = "#E8E0D0";
+  ctx.fillRect(CX - 5, TORSO_TOP + 2, 10, 12);
+
+  // Jacket highlight (left shoulder)
+  ctx.fillStyle = "#A02020";
+  ctx.fillRect(CX - TORSO_W / 2, TORSO_TOP, 10, TORSO_H);
+
+  // ── Chest arc reactor glow ──
+  const chestGlow = 0.75 + Math.sin(t * 3.0) * 0.22;
   const chestX = CX;
-  const chestY = CY - 7 * P + breathY;
-  radialGlow(ctx, chestX, chestY, 14, `rgba(56,216,255,${chestGlow * 0.4})`);
+  const chestY = TORSO_TOP + 28 + breathY;
+  radialGlow(ctx, chestX, chestY, 18, `rgba(56,216,255,${chestGlow * 0.45})`);
   ctx.fillStyle = `rgba(56,216,255,${chestGlow})`;
   ctx.beginPath();
-  ctx.arc(chestX, chestY, 3, 0, Math.PI * 2);
+  ctx.arc(chestX, chestY, 4, 0, Math.PI * 2);
   ctx.fill();
+  // Inner ring
+  ctx.strokeStyle = `rgba(176,238,255,${chestGlow * 0.7})`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(chestX, chestY, 6, 0, Math.PI * 2);
+  ctx.stroke();
 
-  // Arms
-  // Left arm (pointing toward monitor, slightly raised)
-  px(ctx, CX / P - 5, ty + 1, 2, 3, C.jacket);
-  px(ctx, CX / P - 6, ty + 3, 2, 2, C.skin); // hand
-  // Right arm (down)
-  px(ctx, CX / P + 3, ty + 1, 2, 4, C.jacket);
-  px(ctx, CX / P + 3, ty + 4, 2, 2, C.skin);
+  // ── Arms (resting on / near desk, forearms forward toward keyboard) ──
+  // Left arm — resting on desk, slightly forward
+  ctx.fillStyle = "#8B1A1A";
+  ctx.fillRect(CX - TORSO_W / 2 - 8, TORSO_TOP + 30, 14, 28);
+  // Left hand on desk
+  ctx.fillStyle = C.skin;
+  ctx.fillRect(CX - TORSO_W / 2 - 6, DESK_TOP - 10, 12, 10);
 
-  // Head
-  const hy = ty - 5;
-  px(ctx, CX / P - 2, hy, 4, 5, C.skin);
-  // Hair (curly top)
-  px(ctx, CX / P - 2, hy - 2, 4, 2, C.hair);
-  px(ctx, CX / P - 3, hy - 1, 2, 2, C.hair);
-  px(ctx, CX / P + 1, hy - 1, 2, 2, C.hair);
-  px(ctx, CX / P - 2, hy, 1, 1, C.hair); // side hair
-  px(ctx, CX / P + 1, hy, 1, 1, C.hair);
-  // Eyes
-  px(ctx, CX / P - 1, hy + 1, 1, 1, "#2C1A0E");
-  px(ctx, CX / P + 0, hy + 1, 1, 1, "#2C1A0E");
-  // Nose
-  px(ctx, CX / P - 1, hy + 2, 1, 1, C.skinShadow);
-  // Beard / mouth
-  px(ctx, CX / P - 1, hy + 3, 2, 1, "#5C3020");
-  px(ctx, CX / P - 1, hy + 4, 2, 1, "#3C2010");
+  // Right arm — extended toward keyboard area
+  ctx.fillStyle = "#8B1A1A";
+  ctx.fillRect(CX + TORSO_W / 2 - 6, TORSO_TOP + 30, 14, 28);
+  // Right hand on desk
+  ctx.fillStyle = C.skin;
+  ctx.fillRect(CX + TORSO_W / 2 - 4, DESK_TOP - 10, 12, 10);
+
+  // ── Neck ──
+  const NECK_TOP = TORSO_TOP - 10;
+  ctx.fillStyle = C.skin;
+  ctx.fillRect(CX - 6, NECK_TOP, 12, 12);
+
+  // ── Head ──
+  // Head top ≈ NECK_TOP - 32 ≈ y=148 (between lamp y≈130 and monitor y=180) ✓
+  const HEAD_TOP = NECK_TOP - 32 + breathY;
+  const HEAD_W = 32;
+  const HEAD_H = 32;
+
+  // Face base
+  ctx.fillStyle = C.skin;
+  ctx.fillRect(CX - HEAD_W / 2, HEAD_TOP, HEAD_W, HEAD_H);
+
+  // Face shadow (right side, away from lamp)
+  ctx.fillStyle = C.skinShadow;
+  ctx.globalAlpha = 0.25;
+  ctx.fillRect(CX + 4, HEAD_TOP + 4, HEAD_W / 2 - 4, HEAD_H - 8);
+  ctx.globalAlpha = 1;
+
+  // ── Dark hair (thick, slightly wavy) ──
+  ctx.fillStyle = "#1A0E08";  // near-black dark brown
+  // Top of head
+  ctx.fillRect(CX - HEAD_W / 2, HEAD_TOP - 8, HEAD_W, 12);
+  // Side hair left
+  ctx.fillRect(CX - HEAD_W / 2 - 4, HEAD_TOP, 8, HEAD_H * 0.6);
+  // Side hair right
+  ctx.fillRect(CX + HEAD_W / 2 - 4, HEAD_TOP, 8, HEAD_H * 0.5);
+  // Hair texture bumps (wavy)
+  ctx.fillStyle = "#2C1A0E";
+  ctx.fillRect(CX - 12, HEAD_TOP - 6, 8, 4);
+  ctx.fillRect(CX + 2, HEAD_TOP - 6, 8, 4);
+  ctx.fillRect(CX - 4, HEAD_TOP - 10, 8, 6);
+
+  // ── Eyes — looking RIGHT toward monitor ──
+  // Eyes positioned in upper half of face, shifted right
+  const EYE_Y = HEAD_TOP + 12;
+  // Left eye (further from monitor — smaller/squinting slightly)
+  ctx.fillStyle = "#1A0A04";
+  ctx.fillRect(CX - 10, EYE_Y, 5, 4);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(CX - 9, EYE_Y, 2, 3);  // highlight
+  // Right eye (closer to monitor — looking right)
+  ctx.fillStyle = "#1A0A04";
+  ctx.fillRect(CX + 4, EYE_Y, 5, 4);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(CX + 7, EYE_Y, 2, 3);  // highlight shifted right = looking right
+
+  // ── Nose ──
+  ctx.fillStyle = C.skinShadow;
+  ctx.fillRect(CX - 1, HEAD_TOP + 18, 4, 4);
+
+  // ── Mustache (small, dark) ──
+  ctx.fillStyle = "#2A1008";
+  ctx.fillRect(CX - 7, HEAD_TOP + 22, 14, 3);
+  // Mustache center gap
+  ctx.fillStyle = C.skin;
+  ctx.fillRect(CX - 1, HEAD_TOP + 22, 2, 3);
+
+  // ── Short beard / stubble ──
+  ctx.fillStyle = "#3A1A0A";
+  ctx.globalAlpha = 0.55;
+  ctx.fillRect(CX - 8, HEAD_TOP + 25, 16, 6);  // chin area
+  ctx.globalAlpha = 1;
+
+  // ── Ear ──
+  ctx.fillStyle = C.skin;
+  ctx.fillRect(CX - HEAD_W / 2 - 2, HEAD_TOP + 10, 4, 8);
 }
 
 // ─── Draw floating particles ──────────────────────────────────────────────────
