@@ -3,6 +3,7 @@
  * Background: #EEEBE5 亚麻白 | Font: Geist Mono (标题/编号) + Noto Sans SC (正文)
  * Color: #1C1C1C 近黑 | #6B6966 暖灰 | #2A1810 深棕(hover) | #D4C9B8 边框
  * Layout: 单列窄宽 680px，左对齐，大量留白
+ * Animation: 全宽 Canvas（560×380），无遮罩，参考 mmguo.dev/clawd 展示方式
  */
 
 import { useRef } from "react";
@@ -13,21 +14,21 @@ const skills = [
   {
     name: "Paper Visualizer",
     slug: "visual-architect",
-    desc: "将论文逻辑转化为 DALL-E 3 / Midjourney 可用的结构化视觉提示词。",
+    desc: "将研究论文转化为高精度视觉架构图。分析论文逻辑，自动选择最优布局模式，生成适用于 DALL-E 3 / Midjourney 的结构化提示词。",
     github: "https://github.com/WilsonWukz/MySkills/tree/main/skills/visual-architect",
     tag: "Vision",
   },
   {
     name: "Humanizer",
     slug: "humanizer",
-    desc: "把机械感文本改写得像人写的——打碎节奏，而不只是换词。",
+    desc: "将机械感文本重构为自然人类写作。不只是换词——它打碎逻辑骨架，强制句子节奏不均，让文字真正读起来像人写的。",
     github: "https://github.com/WilsonWukz/MySkills/tree/main/skills/humanizer",
     tag: "Writing",
   },
   {
     name: "Human Writing Assistant",
     slug: "human-writing-assistant",
-    desc: "从起草阶段就规避合成感的写作助手，内置 21 条反 AI 写作铁律。",
+    desc: "从零起草就避免合成感的写作助手。内置 21 条铁律，在生成阶段主动规避所有机械写作模式，附自我进化反馈循环。",
     github: "https://github.com/WilsonWukz/MySkills/tree/main/skills/human-writing-assistant",
     tag: "Writing",
   },
@@ -43,7 +44,7 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-// ── 像素画 Canvas 组件 ──
+// ── 像素画 Canvas 组件（全宽，无遮罩）──
 function PixelArtCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   usePixelArt(canvasRef);
@@ -51,48 +52,48 @@ function PixelArtCanvas() {
   return (
     <div
       style={{
-        position: "relative",
-        width: "320px",
-        height: "320px",
-        margin: "2.5rem 0 1rem -0.5rem",
+        width: "100%",
+        maxWidth: "560px",
+        margin: "2.5rem 0 0.5rem 0",
+        // 参考 mmguo.dev/clawd：动画区域无边框、无遮罩，直接展示
+        lineHeight: 0,
       }}
     >
       <canvas
         ref={canvasRef}
-        width={320}
-        height={320}
+        width={560}
+        height={380}
         style={{
-          position: "absolute",
-          inset: 0,
-          maskImage: "radial-gradient(circle at 50% 50%, black 38%, transparent 68%)",
-          WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 38%, transparent 68%)",
+          width: "100%",
+          height: "auto",
+          display: "block",
+          imageRendering: "pixelated",  // 保持像素清晰度
         }}
-        aria-hidden="true"
+        aria-label="Iron Man pixel art animation"
       />
     </div>
   );
 }
 
-// ── 链接悬停样式（内联事件处理）──
-const linkStyle: React.CSSProperties = {
-  fontFamily: "'Geist Mono', monospace",
-  fontSize: "0.875rem",
-  fontWeight: 500,
-  color: "#1C1C1C",
-  textDecoration: "underline dashed",
-  textUnderlineOffset: "3px",
-  textDecorationColor: "#D4C9B8",
-  transition: "color 150ms ease, text-decoration-color 150ms ease",
-  cursor: "pointer",
-};
-
+// ── 链接组件 ──
 function ContentLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      style={linkStyle}
+      style={{
+        fontFamily: "'Geist Mono', monospace",
+        fontSize: "0.875rem",
+        fontWeight: 500,
+        color: "#1C1C1C",
+        textDecoration: "underline",
+        textDecorationStyle: "dashed",
+        textUnderlineOffset: "3px",
+        textDecorationColor: "#D4C9B8",
+        transition: "color 150ms ease, text-decoration-color 150ms ease",
+        cursor: "pointer",
+      }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLAnchorElement;
         el.style.color = "#2A1810";
@@ -142,7 +143,13 @@ export default function Home() {
               href="https://github.com/WilsonWukz/MySkills"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "#1C1C1C", textDecoration: "underline dashed", textUnderlineOffset: "2px", textDecorationColor: "#D4C9B8" }}
+              style={{
+                color: "#1C1C1C",
+                textDecoration: "underline",
+                textDecorationStyle: "dashed",
+                textUnderlineOffset: "2px",
+                textDecorationColor: "#D4C9B8",
+              }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLElement;
                 el.style.color = "#2A1810";
@@ -191,14 +198,11 @@ export default function Home() {
       >
 
         {/* ── Hero ── */}
-        <header
-          className="fade-in fade-in-delay-1"
-          style={{ marginBottom: "0" }}
-        >
+        <header className="fade-in fade-in-delay-1" style={{ marginBottom: "0" }}>
           <h1
             style={{
               fontFamily: "'Geist Mono', monospace",
-              fontSize: "clamp(1.4rem, 4vw, 1.75rem)",
+              fontSize: "clamp(1.5rem, 4vw, 1.85rem)",
               fontWeight: 400,
               letterSpacing: "0.02em",
               color: "#1C1C1C",
@@ -212,10 +216,10 @@ export default function Home() {
           <p
             style={{
               fontFamily: "'Noto Sans SC', sans-serif",
-              fontSize: "0.875rem",
+              fontSize: "0.9rem",
               color: "#3A3A39",
               lineHeight: 1.85,
-              maxWidth: "500px",
+              maxWidth: "520px",
               marginBottom: "1.4rem",
             }}
           >
@@ -230,7 +234,7 @@ export default function Home() {
               rel="noopener noreferrer"
               style={{
                 fontFamily: "'Geist Mono', monospace",
-                fontSize: "0.75rem",
+                fontSize: "0.78rem",
                 color: "#3A3A39",
                 textDecoration: "none",
                 display: "flex",
@@ -241,13 +245,13 @@ export default function Home() {
               onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = "#2A1810")}
               onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = "#3A3A39")}
             >
-              <GithubIcon size={13} />
+              <GithubIcon size={14} />
               github.com/WilsonWukz
             </a>
           </div>
         </header>
 
-        {/* ── 像素画装饰（Hero 下方）── */}
+        {/* ── 像素动画（全宽展示，参考 mmguo.dev/clawd）── */}
         <div className="fade-in fade-in-delay-2">
           <PixelArtCanvas />
         </div>
@@ -255,7 +259,7 @@ export default function Home() {
         {/* ── 引言 ── */}
         <figure
           className="fade-in fade-in-delay-3"
-          style={{ margin: "0 0 3.5rem 0" }}
+          style={{ margin: "1.5rem 0 3.5rem 0" }}
         >
           <blockquote
             style={{
@@ -275,10 +279,7 @@ export default function Home() {
         </figure>
 
         {/* ── 01 Skills ── */}
-        <section
-          className="fade-in fade-in-delay-3"
-          style={{ marginBottom: "3.5rem" }}
-        >
+        <section className="fade-in fade-in-delay-3" style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="01  Skills" />
           <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
             {skills.map((skill) => (
@@ -303,9 +304,9 @@ export default function Home() {
                 <p
                   style={{
                     fontFamily: "'Noto Sans SC', sans-serif",
-                    fontSize: "0.8rem",
+                    fontSize: "0.82rem",
                     color: "#6B6966",
-                    lineHeight: 1.7,
+                    lineHeight: 1.75,
                     marginTop: "0.25rem",
                   }}
                 >
@@ -314,8 +315,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-
-          {/* 查看全部 */}
           <div style={{ marginTop: "1.5rem" }}>
             <ContentLink href="https://github.com/WilsonWukz/MySkills">
               查看所有 Skills →
@@ -324,10 +323,7 @@ export default function Home() {
         </section>
 
         {/* ── 02 Writings ── */}
-        <section
-          className="fade-in fade-in-delay-4"
-          style={{ marginBottom: "3.5rem" }}
-        >
+        <section className="fade-in fade-in-delay-4" style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="02  Writings" />
           <p
             style={{
@@ -342,10 +338,7 @@ export default function Home() {
         </section>
 
         {/* ── 03 What Shapes Me ── */}
-        <section
-          className="fade-in fade-in-delay-4"
-          style={{ marginBottom: "3.5rem" }}
-        >
+        <section className="fade-in fade-in-delay-4" style={{ marginBottom: "3.5rem" }}>
           <SectionHeader label="03  What Shapes Me" />
           <p
             style={{
@@ -365,7 +358,7 @@ export default function Home() {
           <p
             style={{
               fontFamily: "'Noto Sans SC', sans-serif",
-              fontSize: "0.875rem",
+              fontSize: "0.9rem",
               color: "#3A3A39",
               lineHeight: 1.85,
               marginBottom: "1rem",

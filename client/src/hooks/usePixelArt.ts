@@ -1,81 +1,123 @@
+/**
+ * usePixelArt — Iron Man × Holographic Brain Animation
+ * ─────────────────────────────────────────────────────
+ * Design principles (matching mmguo.dev/clawd aesthetic):
+ * - Large canvas (560×380), no mask, full-width display
+ * - Warm light background to match linen-white page (#EEEBE5)
+ * - Iron Man sprite: 14×22 px grid, P=5 → 70×110 real px (clearly recognisable)
+ * - Walk cycle: proper foot-bob (±2px Y) so he walks, not floats
+ * - Holographic brain: large (50px grid wide), bright cyan glow
+ * - Stark lab bg: light warm tones, subtle hologram panels, mechanical arm
+ */
+
 import { useEffect, useRef, type RefObject } from "react";
 
-const P = 4; // one "pixel art pixel" = 4 real canvas pixels
+const P = 5; // 1 grid unit = 5 real pixels
 
-// ── Iron Man color palette ──────────────────────────────────────────────────
-const R  = '#D42020'; // red
-const RD = '#8A1010'; // dark red
-const G  = '#D4A010'; // gold
-const GD = '#8A6000'; // dark gold
-const AB = '#40C8FF'; // arc / eye blue
-const AG = '#A0EAFF'; // arc bright/glow
+// ── Color palette ────────────────────────────────────────────────────────────
+const COL: Record<number, string> = {
+  0: 'transparent',
+  1: '#C8181A',  // red main
+  2: '#8A0E10',  // red dark / shadow
+  3: '#E8C030',  // gold main
+  4: '#A07818',  // gold dark
+  5: '#55CCFF',  // arc reactor / eye blue
+  6: '#AAEEFF',  // arc reactor bright
+  7: '#2A2A2A',  // near-black joint
+  8: '#E0E0E0',  // silver highlight
+  9: '#1A1A1A',  // black outline
+};
 
-type SpriteRow = number[];
-// 0=transparent, 1=R, 2=RD, 3=G, 4=GD, 5=AB, 6=AG
+type Row = number[];
 
-function colorOf(code: number): string {
-  return [R, R, RD, G, GD, AB, AG][code] ?? R;
-}
-
-// ── Sprite data: 10 wide × 16 tall ─────────────────────────────────────────
-const STAND: SpriteRow[] = [
-  [0,0,2,1,1,1,1,2,0,0],
-  [0,2,1,1,1,1,1,1,2,0],
-  [2,1,3,3,3,3,3,3,1,2],
-  [2,1,5,5,5,5,5,5,1,0],
-  [0,2,1,1,1,1,1,1,2,0],
-  [0,0,3,1,1,1,1,3,0,0],
-  [0,2,1,3,3,3,3,1,2,0],
-  [2,1,1,3,5,5,3,1,1,0],
-  [2,1,1,5,6,6,5,1,1,0],
-  [2,1,1,3,3,3,3,1,1,0],
-  [0,3,1,1,1,1,1,3,0,0],
-  [0,1,1,1,0,0,1,1,0,0],
-  [0,1,1,1,0,0,1,1,0,0],
-  [0,2,1,1,0,0,1,1,2,0],
-  [0,3,1,1,0,0,1,1,3,0],
-  [0,3,3,2,0,0,2,3,3,0],
+// ── Iron Man Sprite: 14 wide × 22 tall ──────────────────────────────────────
+// Helmet (rows 0-5), torso (6-13), legs (14-21)
+const STAND: Row[] = [
+  // Row 0-1: helmet top
+  [0,0,0,9,9,9,9,9,9,0,0,0,0,0],
+  [0,0,9,1,1,1,1,1,1,9,0,0,0,0],
+  // Row 2-3: faceplate with eyes
+  [0,9,2,1,1,1,1,1,1,2,9,0,0,0],
+  [0,9,1,5,5,1,1,5,5,1,9,0,0,0],
+  // Row 4-5: chin/jaw
+  [0,9,1,1,3,3,3,3,1,1,9,0,0,0],
+  [0,0,9,3,3,3,3,3,3,9,0,0,0,0],
+  // Row 6-7: neck + shoulder pad
+  [0,9,3,1,1,1,1,1,1,3,9,0,0,0],
+  [9,1,1,1,1,1,1,1,1,1,1,9,0,0],
+  // Row 8-9: chest with arc reactor
+  [9,1,2,1,5,6,6,5,1,2,1,9,0,0],
+  [9,1,2,1,6,6,6,6,1,2,1,9,0,0],
+  // Row 10-11: lower chest
+  [9,1,1,1,5,1,1,5,1,1,1,9,0,0],
+  [9,1,3,1,1,1,1,1,1,3,1,9,0,0],
+  // Row 12-13: waist + upper arm
+  [0,9,1,1,1,1,1,1,1,1,9,0,0,0],
+  [0,9,3,3,1,1,1,1,3,3,9,0,0,0],
+  // Row 14-15: hip / upper legs
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  // Row 16-17: thighs
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  [0,0,9,2,1,0,0,1,2,9,0,0,0,0],
+  // Row 18-19: knees
+  [0,0,9,3,1,0,0,1,3,9,0,0,0,0],
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  // Row 20-21: feet
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  [0,9,3,3,2,0,0,2,3,3,9,0,0,0],
 ];
 
-const WALK_A: SpriteRow[] = [
-  ...STAND.slice(0, 11),
-  [0,0,1,1,1,0,1,0,0,0],
-  [0,0,2,1,0,0,1,1,0,0],
-  [0,0,2,1,0,0,0,1,1,0],
-  [0,3,1,0,0,0,0,3,1,0],
-  [0,3,3,0,0,0,0,0,3,3],
+// Walk A: left foot forward, right foot back
+const WALK_A: Row[] = [
+  ...STAND.slice(0, 14),
+  // hip
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  // left leg forward (shifted left+up), right leg back (shifted right+down)
+  [0,9,1,1,0,0,0,0,1,1,9,0,0,0],
+  [9,1,1,0,0,0,0,0,0,1,1,9,0,0],
+  [9,1,1,0,0,0,0,0,1,1,9,0,0,0],
+  [9,3,2,0,0,0,0,0,2,3,9,0,0,0],
+  [9,3,3,0,0,0,0,1,1,9,0,0,0,0],
+  [0,0,0,0,0,0,9,3,3,9,0,0,0,0],
 ];
 
-const WALK_B: SpriteRow[] = [
-  ...STAND.slice(0, 11),
-  [0,1,0,1,1,0,1,1,0,0],
-  [0,1,1,0,0,1,1,0,0,0],
-  [0,1,1,0,0,0,1,2,0,0],
-  [0,3,1,0,0,0,1,3,0,0],
-  [3,3,0,0,0,0,3,3,0,0],
+// Walk B: right foot forward, left foot back
+const WALK_B: Row[] = [
+  ...STAND.slice(0, 14),
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  [0,0,9,1,1,0,0,1,1,9,0,0,0,0],
+  // right leg forward, left leg back
+  [0,0,9,1,1,0,0,0,1,1,9,0,0,0],
+  [0,0,9,1,1,0,0,0,0,1,1,9,0,0],
+  [0,0,9,1,1,0,0,0,1,1,9,0,0,0],
+  [0,9,3,3,9,0,0,0,2,3,9,0,0,0],
+  [9,1,1,9,0,0,0,0,0,0,0,0,0,0],
+  [9,3,3,9,0,0,0,0,0,0,0,0,0,0],
 ];
 
 function drawSprite(
   ctx: CanvasRenderingContext2D,
-  sprite: SpriteRow[],
+  sprite: Row[],
   gx: number, gy: number,
   flipX: boolean,
   arcPulse: number,
 ) {
-  const w = sprite[0].length;
+  const W = sprite[0].length;
   for (let row = 0; row < sprite.length; row++) {
-    for (let col = 0; col < w; col++) {
-      const code = sprite[row][flipX ? w - 1 - col : col];
+    for (let col = 0; col < W; col++) {
+      const code = sprite[row][flipX ? W - 1 - col : col];
       if (code === 0) continue;
       if (code === 5) {
-        ctx.globalAlpha = 0.65 + arcPulse * 0.35;
-        ctx.fillStyle = AB;
+        ctx.globalAlpha = 0.6 + arcPulse * 0.4;
+        ctx.fillStyle = COL[5];
       } else if (code === 6) {
-        ctx.globalAlpha = 0.75 + arcPulse * 0.25;
-        ctx.fillStyle = AG;
+        ctx.globalAlpha = 0.8 + arcPulse * 0.2;
+        ctx.fillStyle = COL[6];
       } else {
         ctx.globalAlpha = 1;
-        ctx.fillStyle = colorOf(code);
+        ctx.fillStyle = COL[code] ?? '#FF0000';
       }
       ctx.fillRect((gx + col) * P, (gy + row) * P, P, P);
     }
@@ -83,31 +125,63 @@ function drawSprite(
   ctx.globalAlpha = 1;
 }
 
-// ── Brain hologram ──────────────────────────────────────────────────────────
-// Pixels: [dx, dy] relative to brain center
-const BRAIN_CELLS: Array<[number, number]> = [
-  // Left lobe
-  [-5,0],[-5,1],
-  [-4,-1],[-4,0],[-4,1],[-4,2],
-  [-3,-2],[-3,-1],[-3,0],[-3,1],[-3,2],[-3,3],
-  [-2,-3],[-2,-2],[-2,-1],[-2,0],[-2,1],[-2,2],[-2,3],
-  [-1,-2],[-1,-1],[-1,0],[-1,1],[-1,2],
-  // Center (corpus callosum)
-  [0,-1],[0,0],[0,1],[0,2],
-  // Right lobe
-  [1,-2],[1,-1],[1,0],[1,1],[1,2],
-  [2,-3],[2,-2],[2,-1],[2,0],[2,1],[2,2],[2,3],
-  [3,-2],[3,-1],[3,0],[3,1],[3,2],[3,3],
-  [4,-1],[4,0],[4,1],[4,2],
-  [5,0],[5,1],
+// ── Holographic Brain ────────────────────────────────────────────────────────
+// Brain: solid filled pixel art, two lobes separated by a vertical sulcus at x=0
+// Each entry: [dx, dy, brightness 0–1] where brightness drives color intensity
+// Left lobe: x=-8..-1, Right lobe: x=1..8, Sulcus gap at x=0
+const BRAIN_PIXELS: Array<[number, number, number]> = [
+  // ── Left lobe ── (filled solid, brighter toward center)
+  // Row -5 (top cap)
+  [-5,-5,0.5],[-4,-5,0.6],[-3,-5,0.7],[-2,-5,0.6],[-1,-5,0.5],
+  // Row -4
+  [-7,-4,0.4],[-6,-4,0.55],[-5,-4,0.7],[-4,-4,0.85],[-3,-4,0.9],[-2,-4,0.85],[-1,-4,0.7],
+  // Row -3
+  [-7,-3,0.5],[-6,-3,0.65],[-5,-3,0.8],[-4,-3,0.95],[-3,-3,1.0],[-2,-3,0.95],[-1,-3,0.8],
+  // Row -2 (sulcus groove — dimmer strip to simulate fold)
+  [-7,-2,0.45],[-6,-2,0.6],[-5,-2,0.5],[-4,-2,0.4],[-3,-2,0.35],[-2,-2,0.4],[-1,-2,0.5],
+  // Row -1
+  [-8,-1,0.35],[-7,-1,0.55],[-6,-1,0.75],[-5,-1,0.9],[-4,-1,0.95],[-3,-1,0.9],[-2,-1,0.8],[-1,-1,0.7],
+  // Row 0
+  [-8,0,0.4],[-7,0,0.6],[-6,0,0.8],[-5,0,0.95],[-4,0,1.0],[-3,0,0.95],[-2,0,0.85],[-1,0,0.75],
+  // Row 1 (another sulcus fold)
+  [-8,1,0.4],[-7,1,0.55],[-6,1,0.45],[-5,1,0.35],[-4,1,0.4],[-3,1,0.5],[-2,1,0.65],[-1,1,0.7],
+  // Row 2
+  [-8,2,0.35],[-7,2,0.5],[-6,2,0.7],[-5,2,0.85],[-4,2,0.9],[-3,2,0.85],[-2,2,0.75],[-1,2,0.65],
+  // Row 3
+  [-7,3,0.4],[-6,3,0.55],[-5,3,0.65],[-4,3,0.7],[-3,3,0.65],[-2,3,0.55],[-1,3,0.45],
+  // Row 4 (bottom)
+  [-6,4,0.3],[-5,4,0.4],[-4,4,0.45],[-3,4,0.4],[-2,4,0.3],
+
+  // ── Right lobe ── (mirror of left)
+  [5,-5,0.5],[4,-5,0.6],[3,-5,0.7],[2,-5,0.6],[1,-5,0.5],
+  [7,-4,0.4],[6,-4,0.55],[5,-4,0.7],[4,-4,0.85],[3,-4,0.9],[2,-4,0.85],[1,-4,0.7],
+  [7,-3,0.5],[6,-3,0.65],[5,-3,0.8],[4,-3,0.95],[3,-3,1.0],[2,-3,0.95],[1,-3,0.8],
+  [7,-2,0.45],[6,-2,0.6],[5,-2,0.5],[4,-2,0.4],[3,-2,0.35],[2,-2,0.4],[1,-2,0.5],
+  [8,-1,0.35],[7,-1,0.55],[6,-1,0.75],[5,-1,0.9],[4,-1,0.95],[3,-1,0.9],[2,-1,0.8],[1,-1,0.7],
+  [8,0,0.4],[7,0,0.6],[6,0,0.8],[5,0,0.95],[4,0,1.0],[3,0,0.95],[2,0,0.85],[1,0,0.75],
+  [8,1,0.4],[7,1,0.55],[6,1,0.45],[5,1,0.35],[4,1,0.4],[3,1,0.5],[2,1,0.65],[1,1,0.7],
+  [8,2,0.35],[7,2,0.5],[6,2,0.7],[5,2,0.85],[4,2,0.9],[3,2,0.85],[2,2,0.75],[1,2,0.65],
+  [7,3,0.4],[6,3,0.55],[5,3,0.65],[4,3,0.7],[3,3,0.65],[2,3,0.55],[1,3,0.45],
+  [6,4,0.3],[5,4,0.4],[4,4,0.45],[3,4,0.4],[2,4,0.3],
+
+  // ── Corpus callosum (center bridge, dimmer) ──
+  [0,-1,0.3],[0,0,0.35],[0,1,0.3],[0,2,0.25],
+
+  // ── Brain stem ──
+  [-1,5,0.4],[0,5,0.5],[1,5,0.4],
+  [0,6,0.35],[0,7,0.25],
 ];
 
-// Fixed neural connection pairs (index pairs into BRAIN_CELLS)
+// Neural connection pairs (grid offsets) — connect within each lobe
 const NEURAL_LINKS: Array<[number,number,number,number]> = [
-  [-4,0,-1,2],[-3,1,0,0],[-2,-2,2,-1],[0,1,3,0],
-  [1,-1,4,1],[-1,1,2,2],[-3,-1,-1,-2],[2,-2,4,0],
-  [-2,2,1,1],[0,-1,-3,2],[3,2,1,2],[-4,1,-2,3],
-  [-2,0,1,1],[-1,-1,2,0],[3,-1,5,0],[-3,3,0,2],
+  // Left lobe internal
+  [-7,0,-5,2],[-6,-2,-4,0],[-5,-3,-3,-2],[-4,2,-2,1],
+  [-6,3,-4,3],[-5,1,-3,2],[-7,2,-5,4],[-4,-3,-2,-2],
+  // Cross-lobe (corpus callosum connections)
+  [-2,0,2,0],[-1,1,1,1],[-1,-1,1,-1],
+  // Right lobe internal
+  [2,-2,4,0],[3,2,5,1],[4,-3,6,-1],[5,3,7,2],
+  [6,2,8,2],[4,2,6,3],[3,-2,5,-3],[6,0,8,1],
 ];
 
 function drawBrain(
@@ -115,16 +189,16 @@ function drawBrain(
   cx: number, cy: number,
   floatY: number, time: number,
 ) {
-  const acy = cy + floatY; // actual y with float
-  const pulse = 0.7 + 0.3 * Math.sin(time * 1.4);
+  const acy = cy + floatY;
+  const pulse = 0.75 + 0.25 * Math.sin(time * 1.2);
 
-  // Neural connections
-  ctx.lineWidth = 0.8;
+  // Neural connections (drawn first, behind pixels)
+  ctx.lineWidth = 1;
   for (const [dx1, dy1, dx2, dy2] of NEURAL_LINKS) {
-    const spark = 0.15 + 0.55 * Math.sin(time * 2.8 + dx1 * 1.3 + dy2 * 1.9);
-    if (spark <= 0) continue;
-    ctx.globalAlpha = spark * pulse * 0.5;
-    ctx.strokeStyle = '#60D8FF';
+    const spark = 0.15 + 0.55 * Math.sin(time * 2.5 + dx1 * 1.1 + dy2 * 1.7);
+    if (spark <= 0.05) continue;
+    ctx.globalAlpha = spark * pulse * 0.45;
+    ctx.strokeStyle = '#38D8FF';
     ctx.beginPath();
     ctx.moveTo((cx + dx1) * P + P / 2, (acy + dy1) * P + P / 2);
     ctx.lineTo((cx + dx2) * P + P / 2, (acy + dy2) * P + P / 2);
@@ -132,170 +206,210 @@ function drawBrain(
   }
   ctx.globalAlpha = 1;
 
-  // Brain pixels with soft glow
-  for (let i = 0; i < BRAIN_CELLS.length; i++) {
-    const [dx, dy] = BRAIN_CELLS[i];
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const brightness = Math.max(0, 1 - dist / 7.5);
-    const flicker = pulse * (0.65 + 0.35 * Math.sin(time * 2 + i * 0.73 + dx * 0.4));
+  // Brain pixels — now with per-pixel brightness from data
+  for (let i = 0; i < BRAIN_PIXELS.length; i++) {
+    const [dx, dy, bBase] = BRAIN_PIXELS[i];
+    const flicker = pulse * (0.75 + 0.25 * Math.sin(time * 1.6 + i * 0.43 + dx * 0.25));
+    const b = bBase * flicker;
 
-    // Outer glow
-    ctx.globalAlpha = flicker * brightness * 0.22;
-    ctx.fillStyle = '#40C8FF';
+    // Subtle outer glow
+    ctx.globalAlpha = b * 0.15;
+    ctx.fillStyle = '#20B8FF';
     ctx.fillRect((cx + dx) * P - 2, (acy + dy) * P - 2, P + 4, P + 4);
 
-    // Core pixel
-    const g = Math.round(155 + brightness * 65);
-    const b = 255;
-    ctx.globalAlpha = flicker * (0.55 + brightness * 0.45);
-    ctx.fillStyle = `rgb(80,${g},${b})`;
+    // Core pixel — color shifts from deep blue (dim) to bright cyan (bright)
+    const green = Math.round(120 + bBase * 120);
+    const blue = 255;
+    const red = Math.round(30 + bBase * 50);
+    ctx.globalAlpha = Math.min(1, b * 0.9 + 0.1);
+    ctx.fillStyle = `rgb(${red},${green},${blue})`;
     ctx.fillRect((cx + dx) * P, (acy + dy) * P, P, P);
   }
   ctx.globalAlpha = 1;
 }
 
-// ── Speech bubble ────────────────────────────────────────────────────────────
+// ── Speech Bubble ────────────────────────────────────────────────────────────
 function drawSpeechBubble(
   ctx: CanvasRenderingContext2D,
   ironGx: number, ironGy: number,
+  facingLeft: boolean,
   time: number,
 ) {
-  const bx = (ironGx - 9) * P;
-  const by = (ironGy - 7) * P;
-  const bw = 48;
-  const bh = 18;
+  // Position bubble above and to the side Iron Man faces
+  const bw = 72;
+  const bh = 26;
+  const bx = facingLeft
+    ? (ironGx - 16) * P
+    : (ironGx + 15) * P;
+  const by = (ironGy - 8) * P;
 
-  ctx.globalAlpha = 0.9;
-  ctx.fillStyle = '#D0E8F5';
+  // Bubble body
+  ctx.globalAlpha = 0.92;
+  ctx.fillStyle = '#E8F4FC';
+  ctx.strokeStyle = '#90C8E8';
+  ctx.lineWidth = 1;
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') {
-    ctx.roundRect(bx, by, bw, bh, 4);
+    ctx.roundRect(bx, by, bw, bh, 6);
   } else {
     ctx.rect(bx, by, bw, bh);
   }
   ctx.fill();
+  ctx.stroke();
 
-  // Tail pointing down-right toward Iron Man's head
+  // Tail pointing toward Iron Man's head
+  const tailX = facingLeft ? bx + bw - 10 : bx + 10;
+  ctx.fillStyle = '#E8F4FC';
+  ctx.strokeStyle = '#90C8E8';
   ctx.beginPath();
-  ctx.moveTo(bx + bw - 8, by + bh);
-  ctx.lineTo(bx + bw - 3, by + bh + 8);
-  ctx.lineTo(bx + bw - 14, by + bh);
+  ctx.moveTo(tailX - 6, by + bh);
+  ctx.lineTo(tailX, by + bh + 10);
+  ctx.lineTo(tailX + 6, by + bh);
   ctx.fill();
+  ctx.stroke();
+
   ctx.globalAlpha = 1;
 
-  // Animated "..." dots
-  const dotIdx = Math.floor(time * 2.5) % 3;
+  // Animated dots
+  const dotIdx = Math.floor(time * 2.2) % 3;
   for (let i = 0; i < 3; i++) {
-    ctx.globalAlpha = i <= dotIdx ? 0.8 : 0.18;
-    ctx.fillStyle = '#1A4060';
+    ctx.globalAlpha = i <= dotIdx ? 0.85 : 0.2;
+    ctx.fillStyle = '#1A5080';
     ctx.beginPath();
-    ctx.arc(bx + 10 + i * 11, by + bh / 2, 2.5, 0, Math.PI * 2);
+    ctx.arc(bx + 18 + i * 14, by + bh / 2, 3, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
 
-// ── Background: Stark lab ────────────────────────────────────────────────────
+// ── Stark Lab Background (light warm tones) ──────────────────────────────────
 function drawBackground(ctx: CanvasRenderingContext2D, W: number, H: number, time: number) {
   const floorY = Math.floor(H * 0.68);
 
-  // Ceiling / back wall
-  ctx.fillStyle = '#040810';
+  // Back wall — warm off-white (matches linen page)
+  ctx.fillStyle = '#F0EDE6';
   ctx.fillRect(0, 0, W, floorY);
 
-  // Floor
-  ctx.fillStyle = '#060D1C';
+  // Floor — slightly darker warm tone
+  ctx.fillStyle = '#E4DFD5';
   ctx.fillRect(0, floorY, W, H - floorY);
 
-  // Floor holographic grid
-  ctx.lineWidth = 0.5;
-  for (let x = 0; x <= W; x += P * 5) {
-    ctx.globalAlpha = 0.11;
-    ctx.strokeStyle = '#0E55CC';
+  // Floor grid (subtle, warm gray)
+  ctx.lineWidth = 0.6;
+  for (let x = 0; x <= W; x += P * 6) {
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = '#8090B0';
     ctx.beginPath(); ctx.moveTo(x, floorY); ctx.lineTo(x, H); ctx.stroke();
   }
-  for (let y = floorY; y <= H; y += P * 4) {
+  for (let y = floorY; y <= H; y += P * 5) {
     ctx.globalAlpha = 0.09;
-    ctx.strokeStyle = '#0E55CC';
+    ctx.strokeStyle = '#8090B0';
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
   ctx.globalAlpha = 1;
 
-  // Holographic screen — left wall
-  const s1 = 0.22 + 0.1 * Math.sin(time * 0.55);
-  ctx.globalAlpha = s1 * 0.28;
-  ctx.fillStyle = '#071888';
-  ctx.fillRect(P * 2, P * 4, P * 14, P * 12);
-  ctx.globalAlpha = s1;
-  ctx.strokeStyle = '#1050C8'; ctx.lineWidth = 1;
-  ctx.strokeRect(P * 2, P * 4, P * 14, P * 12);
-  ctx.fillStyle = '#3070E0';
-  for (let i = 0; i < 6; i++) {
-    const lw = P * 4 + Math.sin(time * 1.1 + i * 0.85) * P * 2.5;
-    ctx.globalAlpha = s1 * 0.55;
-    ctx.fillRect(P * 3, P * (6 + i * 1.8), lw, 2);
+  // Wall panel lines
+  ctx.globalAlpha = 0.08;
+  ctx.strokeStyle = '#707880';
+  ctx.lineWidth = 1;
+  for (let x = P * 8; x < W - P * 4; x += P * 12) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, floorY); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Holographic screen — left wall (blue-tinted, semi-transparent)
+  const s1 = 0.3 + 0.12 * Math.sin(time * 0.6);
+  // Screen border
+  ctx.globalAlpha = s1 * 0.7;
+  ctx.strokeStyle = '#3080C8';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(P * 2, P * 3, P * 16, P * 14);
+  // Screen fill
+  ctx.globalAlpha = s1 * 0.08;
+  ctx.fillStyle = '#2060B0';
+  ctx.fillRect(P * 2, P * 3, P * 16, P * 14);
+  // Data lines
+  for (let i = 0; i < 7; i++) {
+    const lw = P * 3 + Math.sin(time * 1.0 + i * 0.9) * P * 3;
+    ctx.globalAlpha = s1 * 0.45;
+    ctx.fillStyle = '#4090D8';
+    ctx.fillRect(P * 3, P * (5 + i * 1.7), lw, 1.5);
   }
   ctx.globalAlpha = 1;
 
   // Holographic screen — right wall
-  const s2 = 0.18 + 0.08 * Math.sin(time * 0.4 + 1.1);
-  ctx.globalAlpha = s2 * 0.22;
-  ctx.fillStyle = '#06168A';
-  ctx.fillRect(W - P * 18, P * 3, P * 13, P * 9);
-  ctx.globalAlpha = s2;
-  ctx.strokeStyle = '#0A48C8'; ctx.lineWidth = 1;
-  ctx.strokeRect(W - P * 18, P * 3, P * 13, P * 9);
+  const s2 = 0.25 + 0.1 * Math.sin(time * 0.45 + 1.2);
+  ctx.globalAlpha = s2 * 0.6;
+  ctx.strokeStyle = '#2870C0';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(W - P * 20, P * 4, P * 15, P * 10);
+  ctx.globalAlpha = s2 * 0.07;
+  ctx.fillStyle = '#1850A0';
+  ctx.fillRect(W - P * 20, P * 4, P * 15, P * 10);
+  // Circular data viz
+  const circX = W - P * 12, circY = P * 9;
+  for (let r = 1; r <= 3; r++) {
+    ctx.globalAlpha = s2 * 0.35;
+    ctx.strokeStyle = '#3880D0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(circX, circY, P * r * 1.2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.globalAlpha = 1;
 
-  // Ambient brain-area glow
-  const grd = ctx.createRadialGradient(P * 20, P * 48, 0, P * 20, P * 48, P * 22);
-  grd.addColorStop(0, 'rgba(16,100,210,0.07)');
+  // Ambient brain glow (soft blue halo around brain area)
+  const brainGlowX = P * 16;
+  const brainGlowY = P * 36;
+  const grd = ctx.createRadialGradient(brainGlowX, brainGlowY, 0, brainGlowX, brainGlowY, P * 28);
+  grd.addColorStop(0, 'rgba(30,130,220,0.06)');
   grd.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
 
   // Mechanical arm (upper right)
   drawMechArm(ctx, W, time);
 }
 
 function drawMechArm(ctx: CanvasRenderingContext2D, W: number, time: number) {
-  const sw = Math.sin(time * 0.38) * 7;
+  const sw = Math.sin(time * 0.35) * 8;
 
-  // Joint coordinates (real pixels)
-  const j0 = [W - P * 6, 0];
-  const j1 = [W - P * 9 + sw * 0.3, P * 10];
-  const j2 = [W - P * 13 + sw * 0.7, P * 20];
-  const j3 = [W - P * 16 + sw,       P * 27];
+  const j0: [number,number] = [W - P * 5, 0];
+  const j1: [number,number] = [W - P * 8 + sw * 0.3, P * 9];
+  const j2: [number,number] = [W - P * 13 + sw * 0.6, P * 18];
+  const j3: [number,number] = [W - P * 17 + sw, P * 26];
 
   ctx.lineCap = 'round';
 
+  // Arm segments — warm dark gray
   const segs: Array<[[number,number],[number,number],number,string]> = [
-    [j0 as [number,number], j1 as [number,number], P,       '#2E3E58'],
-    [j1 as [number,number], j2 as [number,number], P * 0.8, '#263550'],
-    [j2 as [number,number], j3 as [number,number], P * 0.6, '#1E2C48'],
+    [j0, j1, P * 1.2, '#5A6070'],
+    [j1, j2, P * 1.0, '#4A5060'],
+    [j2, j3, P * 0.8, '#3A4050'],
   ];
-
   for (const [a, b, lw, col] of segs) {
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    ctx.globalAlpha = 0.65;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = lw;
     ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
   }
 
   // Joints
-  ctx.fillStyle = '#3A5070';
   for (const [jx, jy] of [j1, j2, j3]) {
-    ctx.globalAlpha = 0.65;
-    ctx.beginPath(); ctx.arc(jx, jy, P * 0.65, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#6A7888';
+    ctx.beginPath(); ctx.arc(jx, jy, P * 0.7, 0, Math.PI * 2); ctx.fill();
   }
 
-  // Glowing end effector
-  ctx.globalAlpha = 0.35 + 0.3 * Math.sin(time * 2.1);
-  ctx.fillStyle = '#40A0FF';
-  ctx.beginPath(); ctx.arc(j3[0], j3[1], P * 0.55, 0, Math.PI * 2); ctx.fill();
+  // Glowing end effector (cyan)
+  ctx.globalAlpha = 0.4 + 0.3 * Math.sin(time * 2.0);
+  ctx.fillStyle = '#50B8FF';
+  ctx.beginPath(); ctx.arc(j3[0], j3[1], P * 0.6, 0, Math.PI * 2); ctx.fill();
   ctx.globalAlpha = 1;
 }
 
-// ── Main hook ────────────────────────────────────────────────────────────────
-// Canvas should be 320×320.
+// ── Main animation hook ──────────────────────────────────────────────────────
+// Canvas: 560 × 380
 export function usePixelArt(canvasRef: RefObject<HTMLCanvasElement | null>) {
   const animRef = useRef<number>(0);
 
@@ -305,18 +419,21 @@ export function usePixelArt(canvasRef: RefObject<HTMLCanvasElement | null>) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const W = canvas.width;  // 320
-    const H = canvas.height; // 320
+    const W = canvas.width;   // 560
+    const H = canvas.height;  // 380
 
-    // Layout (grid units). Floor at grid row ~54 (pixel 217).
-    const IRON_X_HOME = 50;
-    const IRON_Y      = 38;  // sprite top; feet land at row 54
-    const BRAIN_CX    = 19;
-    const BRAIN_CY    = 46;
-    const WALK_DEST   = 30;  // Iron Man walks to here then returns
+    // Layout (grid units). Canvas = 560×380, P=5.
+    // Floor at grid row ~50 (pixel 250). Brain on left, Iron Man on right.
+    // Brain spans x: cx-8 to cx+8. Iron Man sprite is 14 wide.
+    // Gap between brain right edge and Iron Man left edge: ~4 grid units
+    const BRAIN_CX    = 30;   // brain center x — brain right edge at ~38
+    const BRAIN_CY    = 30;   // brain center y — vertically centered in canvas
+    const IRON_X_HOME = 44;   // Iron Man left edge — ~6 units gap from brain
+    const IRON_Y_BASE = 22;   // Iron Man top (feet at ~row 44, floor at ~50)
+    const WALK_DEST   = 68;   // Iron Man walks right to here
 
-    const TALK_DUR = 7;   // seconds
-    const WALK_DUR = 5;   // seconds
+    const TALK_DUR = 7;
+    const WALK_DUR = 5;
 
     type Phase = 'talking' | 'walking';
     let phase: Phase = 'talking';
@@ -325,8 +442,9 @@ export function usePixelArt(canvasRef: RefObject<HTMLCanvasElement | null>) {
     let lastTs = performance.now();
 
     let ironX = IRON_X_HOME;
-    let flipX = true;       // true = faces left (toward brain)
+    let flipX = true;   // true = faces left (toward brain)
     let walkFrame = 0;
+    let walkBob = 0;    // vertical bob offset in real pixels
 
     const tick = (now: number) => {
       const dt = Math.min((now - lastTs) / 1000, 0.05);
@@ -335,7 +453,7 @@ export function usePixelArt(canvasRef: RefObject<HTMLCanvasElement | null>) {
 
       const phaseTime = time - phaseStart;
 
-      // State transitions
+      // Phase transitions
       if (phase === 'talking' && phaseTime >= TALK_DUR) {
         phase = 'walking';
         phaseStart = time;
@@ -344,39 +462,49 @@ export function usePixelArt(canvasRef: RefObject<HTMLCanvasElement | null>) {
         phaseStart = time;
         ironX = IRON_X_HOME;
         flipX = true;
+        walkBob = 0;
       }
 
-      // Iron Man movement
+      // Iron Man movement + walk bob
       if (phase === 'walking') {
         const wp = Math.min((time - phaseStart) / WALK_DUR, 1);
         if (wp < 0.5) {
           ironX = IRON_X_HOME + (WALK_DEST - IRON_X_HOME) * (wp / 0.5);
-          flipX = true;   // moving left, facing left
+          flipX = false;  // moving right → faces right
         } else {
           ironX = WALK_DEST + (IRON_X_HOME - WALK_DEST) * ((wp - 0.5) / 0.5);
-          flipX = false;  // moving right, facing right
+          flipX = true;   // moving left → faces left
         }
-        walkFrame = Math.floor(time * 5) % 2;
+        // Foot bob: sine wave tied to walk speed (not time, so it scales with speed)
+        walkFrame = Math.floor(time * 6) % 2;
+        walkBob = Math.sin(time * 12) * 2; // ±2 real px vertical bob
       } else {
         ironX = IRON_X_HOME;
         flipX = true;
         walkFrame = 0;
+        walkBob = 0;
       }
 
-      const arcPulse = 0.5 + 0.5 * Math.sin(time * 3.2);
-      const floatY   = Math.sin(time * 0.85) * 1.5;
+      const arcPulse = 0.5 + 0.5 * Math.sin(time * 3.0);
+      const floatY   = Math.sin(time * 0.9) * 1.8; // brain float (grid units)
 
       // ── Render ──
       ctx.clearRect(0, 0, W, H);
       drawBackground(ctx, W, H, time);
       drawBrain(ctx, BRAIN_CX, BRAIN_CY, floatY, time);
 
-      const sprite =
-        phase === 'walking' ? (walkFrame === 0 ? WALK_A : WALK_B) : STAND;
-      drawSprite(ctx, sprite, Math.round(ironX), IRON_Y, flipX, arcPulse);
+      const sprite = phase === 'walking'
+        ? (walkFrame === 0 ? WALK_A : WALK_B)
+        : STAND;
+
+      // Save/restore for bob offset (real pixels)
+      ctx.save();
+      ctx.translate(0, walkBob);
+      drawSprite(ctx, sprite, Math.round(ironX), IRON_Y_BASE, flipX, arcPulse);
+      ctx.restore();
 
       if (phase === 'talking') {
-        drawSpeechBubble(ctx, Math.round(ironX), IRON_Y, time);
+        drawSpeechBubble(ctx, Math.round(ironX), IRON_Y_BASE, flipX, time);
       }
 
       animRef.current = requestAnimationFrame(tick);
