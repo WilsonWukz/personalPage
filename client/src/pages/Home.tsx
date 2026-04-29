@@ -6,28 +6,28 @@
  */
 
 import { useRef } from "react";
-import { useParticles } from "@/hooks/useParticles";
+import { usePixelArt } from "@/hooks/usePixelArt";
 
 // ── Skills 数据（来自 WilsonWukz/MySkills）──
 const skills = [
   {
     name: "Paper Visualizer",
     slug: "visual-architect",
-    desc: "将研究论文转化为高精度视觉架构图。分析论文逻辑，自动选择最优布局模式，生成适用于 DALL-E 3 / Midjourney 的结构化提示词。",
+    desc: "将论文逻辑转化为 DALL-E 3 / Midjourney 可用的结构化视觉提示词。",
     github: "https://github.com/WilsonWukz/MySkills/tree/main/skills/visual-architect",
     tag: "Vision",
   },
   {
     name: "Humanizer",
     slug: "humanizer",
-    desc: "将机械感文本重构为自然人类写作。不只是换词——它打碎逻辑骨架，强制句子节奏不均，让文字真正读起来像人写的。",
+    desc: "把机械感文本改写得像人写的——打碎节奏，而不只是换词。",
     github: "https://github.com/WilsonWukz/MySkills/tree/main/skills/humanizer",
     tag: "Writing",
   },
   {
     name: "Human Writing Assistant",
     slug: "human-writing-assistant",
-    desc: "从零起草就避免合成感的写作助手。内置 21 条铁律，在生成阶段主动规避所有机械写作模式，附自我进化反馈循环。",
+    desc: "从起草阶段就规避合成感的写作助手，内置 21 条反 AI 写作铁律。",
     github: "https://github.com/WilsonWukz/MySkills/tree/main/skills/human-writing-assistant",
     tag: "Writing",
   },
@@ -43,42 +43,30 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-// ── 粒子 Canvas 组件 ──
-function ParticlesCanvas() {
+// ── 像素画 Canvas 组件 ──
+function PixelArtCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  useParticles(canvasRef);
+  usePixelArt(canvasRef);
 
   return (
     <div
       style={{
         position: "relative",
-        width: "260px",
-        height: "260px",
+        width: "320px",
+        height: "320px",
         margin: "2.5rem 0 1rem -0.5rem",
       }}
     >
-      {/* 静态背景图（生成的粒子图） */}
-      <img
-        src="https://d2xsxph8kpxj0f.cloudfront.net/310519663268129420/T9TUsmpcgx7z7MvsaXDFXD/hero-particles-dDn9vkfHoWKcWbVoR7wKbY.webp"
-        alt=""
-        aria-hidden="true"
+      <canvas
+        ref={canvasRef}
+        width={320}
+        height={320}
         style={{
           position: "absolute",
           inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          opacity: 0.55,
-          maskImage: "radial-gradient(circle at 50% 50%, black 30%, transparent 72%)",
-          WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 30%, transparent 72%)",
+          maskImage: "radial-gradient(circle at 50% 50%, black 38%, transparent 68%)",
+          WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 38%, transparent 68%)",
         }}
-      />
-      {/* 动态粒子层 */}
-      <canvas
-        ref={canvasRef}
-        width={260}
-        height={260}
-        style={{ position: "absolute", inset: 0, opacity: 0.75 }}
         aria-hidden="true"
       />
     </div>
@@ -259,9 +247,9 @@ export default function Home() {
           </div>
         </header>
 
-        {/* ── 粒子装饰（Hero 下方）── */}
+        {/* ── 像素画装饰（Hero 下方）── */}
         <div className="fade-in fade-in-delay-2">
-          <ParticlesCanvas />
+          <PixelArtCanvas />
         </div>
 
         {/* ── 引言 ── */}
